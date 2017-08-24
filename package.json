@@ -3,5 +3,11 @@
     "author": "Andrey Monkin",
     "version": "1.0.0",
     "main": "./lib/index.js",
-    "types": "./lib/index.d.ts"
+    "types": "./lib/index.d.ts",
+    "devDependencies": {
+        "typescript": "^2.4.2"
+    },
+    "scripts": {
+        "build": "tsc"
+    }
 }
