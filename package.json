@@ -1,5 +1,5 @@
 {
-    "name": "heract",
+    "name": "once.js",
     "author": "Andrey Monkin",
     "version": "1.0.0",
     "main": "./lib/index.js",

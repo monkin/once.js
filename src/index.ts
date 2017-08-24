@@ -1,4 +1,3 @@
-import { timer } from "./timer"
 
 export { el, El, Children, append, remove } from "./el";
 export { list } from "./list";

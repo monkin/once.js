@@ -2,6 +2,7 @@
 import { El } from "./el";
 import { state } from "./state";
 import { disposable } from "./disposable"; 
+import { optional } from "./optional"
 
 const timeouts = new Map<number, (null | (() => void))[]>();
 
@@ -33,7 +34,22 @@ function timeout(callback: () => void, delay: number) {
     }
 }
 
-export function debounce(element: El, delay: number): El {
+/**
+ * Delay element creation
+ * @param create Element creation function
+ * @param delay Element creation delay
+ */
+export function delay(create: () => El, delay: number) {
+    return state(false, (isReady, setReady) => {
+        let disposeTimeout = timeout(() => setReady(true), delay);
+        return disposable(optional(isReady, create), disposeTimeout);
+    });
+}
+
+/**
+ * Call element update function only if it didn't called during a 'period'
+ */
+export function debounce(element: El, period: number): El {
     let node = Array.isArray(element.node) ? element.node[0] : element.node,
         timeoutDestructor: () => void,
         update = () => element.update();
@@ -41,7 +57,7 @@ export function debounce(element: El, delay: number): El {
         node: element.node,
         update() {
             timeoutDestructor && timeoutDestructor();
-            timeoutDestructor = timeout(update, delay);
+            timeoutDestructor = timeout(update, period);
         },
         dispose() {
             timeoutDestructor && timeoutDestructor();
@@ -50,7 +66,10 @@ export function debounce(element: El, delay: number): El {
     };
 }
 
-export function throttle(element: El, delay: number): El {
+/**
+ * Call element update only once during period
+ */
+export function throttle(element: El, period: number): El {
     let node = Array.isArray(element.node) ? element.node[0] : element.node,
         timeoutFlag = false,
         timeoutDestructor: undefined | (() => void) = undefined,
@@ -68,9 +87,9 @@ export function throttle(element: El, delay: number): El {
             if (!timeoutFlag) {
                 let now = Date.now(),
                     diff = now - lastUpdate;
-                if (diff < delay) {
+                if (diff < period) {
                     timeoutFlag = true;
-                    timeoutDestructor = timeout(update, delay - diff);
+                    timeoutDestructor = timeout(update, period - diff);
                 } else {
                     lastUpdate = now;
                     element.update();
@@ -84,6 +103,9 @@ export function throttle(element: El, delay: number): El {
     };
 }
 
+/**
+ * Call element update function every 'delay' milliseconds
+ */
 export function timer(element: El, delay: number): El {
     return state(false, (get, set) => {
         let interval = setInterval(() => set(v => !v), delay);
