@@ -4,8 +4,17 @@ export declare type Attributes = {
 export declare type Children = (El | string | (() => string))[];
 export declare type Parameter = string | Attributes | Children;
 export interface El {
+    /**
+     * Node or range of nodes
+     */
     readonly node: Node | [Node, Node];
+    /**
+     * Element update function
+     */
     update(this: El): void;
+    /**
+     * Release all the resources binded to the element
+     */
     dispose(this: El): void;
 }
 export declare function el(...params: Parameter[]): {
