@@ -25,6 +25,10 @@ function refresh(el?: El) {
     }
 }
 
+/**
+ * @param initial Initial state value
+ * @param render Callback with parameters that helps to get and set state
+ */
 export function state<T>(initial: T, render: (get: () => T, set: (v: T | ((s: T) => T)) => void) => El): El {
     let lastUpdate = counter - 1,
         current = initial,
