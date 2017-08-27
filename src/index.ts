@@ -8,3 +8,4 @@ export { state } from "./state";
 export { debounce, throttle, timer } from "./timer";
 export { component } from "./component";
 export { disposable } from "./disposable";
+export { classes, ClassValue } from "./classes";

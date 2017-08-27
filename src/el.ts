@@ -1,7 +1,9 @@
 
-export type Attributes = {
-    [key: string]: (string | (() => string | false) | (() => string) | ((e: Event) => void))
-}
+import { classes, ClassValue } from "./classes";
+
+export type Attributes = { className?: ClassValue } & {
+    [key: string]: (string | (() => string | false) | ((e: Event) => void));
+};
 
 export type Children = (El | string | (() => string))[];
 export type Parameter = string | Attributes | Children;
@@ -39,8 +41,9 @@ class ElImplementation implements El {
                     throw new Error(`Event handler must be a function bun '${JSON.stringify(handler)}' passed`);
                 }
             } else {
-                let value = attributes[name],
-                    realName = name === "className" ? "class" : name;
+                let isClass = name === "className",
+                    value = isClass ? classes(attributes.className) : attributes[name],
+                    realName = isClass ? "class" : name;
                 if (value instanceof Function) {
                     ((realName, value: Function) => {
                         let text = value() as (string | false);
