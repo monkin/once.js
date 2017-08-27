@@ -1,5 +1,8 @@
+import { ClassValue } from "./classes";
 export declare type Attributes = {
-    [key: string]: (string | (() => string | false) | (() => string) | ((e: Event) => void));
+    className?: ClassValue;
+} & {
+    [key: string]: (string | (() => string | false) | ((e: Event) => void));
 };
 export declare type Children = (El | string | (() => string))[];
 export declare type Parameter = string | Attributes | Children;
