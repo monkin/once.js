@@ -5,10 +5,10 @@
     "version": "1.0.1",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
-    "devDependencies": {
+    "dependencies": {
         "typescript": "^2.5.1"
     },
     "scripts": {
-        "build": "tsc"
+        "install": "tsc"
     }
 }
