@@ -9,3 +9,4 @@ export { debounce, throttle, timer } from "./timer";
 export { component } from "./component";
 export { disposable } from "./disposable";
 export { classes, ClassValue } from "./classes";
+export { styled, style, stylesheet, Style, Stylesheet } from "./style";

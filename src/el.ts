@@ -26,6 +26,7 @@ export interface El {
 class ElImplementation implements El {
     readonly node: Element;
     private updaters = [] as (() => void)[];
+    private destructors = [] as (() => void)[];
     
     constructor(tag: string, namespace: string | null, attributes: Attributes, children: Children) {
         let node = namespace ? document.createElementNS(namespace, tag) : document.createElement(tag);
@@ -86,6 +87,7 @@ class ElImplementation implements El {
             } else {
                 append(node, child);
                 this.updaters.push(() => child.update());
+                this.destructors.push(() => child.dispose());
             }
         });
 
@@ -96,10 +98,14 @@ class ElImplementation implements El {
             update();
         });
     }
-    dispose() {}
+    dispose() {
+        for (let i of this.destructors) {
+            i();
+        }
+    }
 }
 
-function element(namespace: string | null, params: Parameter[]): { node: Node, update(): void } {
+function element(namespace: string | null, params: Parameter[]): { node: Node, update(): void, dispose(): void } {
     let tag = "div",
         attributes = {} as Attributes,
         children = [] as Children;
