@@ -35,7 +35,7 @@ function stringify(prefix: string, style: Style) {
 
 export const style = (() => {
     let counter = 0,
-        id = () => `c${(counter++).toString(16)}`,
+        id = () => `c${(counter++).toFixed(0)}`,
         requested = false,
         queue = [] as string[],
         update = () => {
@@ -57,7 +57,7 @@ export const style = (() => {
 
 
     function style(style: Style, name: string = "") {
-        let className = (name ? name + "_" : "") + id();
+        let className = (name ? name + "-" : "") + id();
         request(stringify("." + className, style));
         return className;
     }
@@ -68,7 +68,7 @@ export const style = (() => {
 export function stylesheet<T extends Stylesheet>(stylesheet: T): { [className in keyof T]: string } {
     let r: any = {};
     for (let c in stylesheet) {
-        r[c] = style(stylesheet[c]);
+        r[c] = style(stylesheet[c], c);
     }
     return r;
 }
