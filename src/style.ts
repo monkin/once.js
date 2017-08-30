@@ -1,5 +1,5 @@
 
-import { El, el, append, Attributes, Children, Parameter } from "./el";
+import { El, SimpleEl, el, append, Attributes, Children, Parameter } from "./el";
 
 export interface Style {
     ":hover"?: Style;
@@ -73,10 +73,10 @@ export function stylesheet<T extends Stylesheet>(stylesheet: T): { [className in
     return r;
 }
 
-export function styled(tag: string, predefinedStyle: Style, ...params: Parameter[]) {
+export function styled(tag: string, predefinedStyle: Style, predefinedAttributes?: Attributes) {
     let className = style(predefinedStyle);
     return (...params: (Attributes | Children)[]) => {
-        let attributes = {} as Attributes,
+        let attributes: Attributes = predefinedAttributes ? {...predefinedAttributes} : {},
             children = [] as Children;
         for (let p of params) {
             if (Array.isArray(p)) {
@@ -93,5 +93,7 @@ export function styled(tag: string, predefinedStyle: Style, ...params: Parameter
         } else {
             attributes.className = className;
         }
+
+        return el(tag, attributes, children);
     };
 }

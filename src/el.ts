@@ -23,6 +23,12 @@ export interface El {
     dispose(this: El): void;
 }
 
+export interface SimpleEl {
+    node: Node;
+    update(): void;
+    dispose(): void;
+}
+
 class ElImplementation implements El {
     readonly node: Element;
     private updaters = [] as (() => void)[];
@@ -105,7 +111,7 @@ class ElImplementation implements El {
     }
 }
 
-function element(namespace: string | null, params: Parameter[]): { node: Node, update(): void, dispose(): void } {
+function element(namespace: string | null, params: Parameter[]): SimpleEl {
     let tag = "div",
         attributes = {} as Attributes,
         children = [] as Children;
@@ -124,6 +130,15 @@ function element(namespace: string | null, params: Parameter[]): { node: Node, u
     }
     return new ElImplementation(tag, namespace, attributes, children);
 }
+
+export function el(tag: string, attributes: Attributes, children: Children): SimpleEl;
+export function el(attributes: Attributes, children: Children): SimpleEl;
+export function el(tag: string, children: Children): SimpleEl;
+export function el(tag: string, attributes: Attributes): SimpleEl;
+export function el(children: Children): SimpleEl;
+export function el(tag: string): SimpleEl;
+export function el(attributes: Attributes): SimpleEl;
+export function el(): SimpleEl;
 
 export function el(...params: Parameter[]) {
     return element(null, params);
