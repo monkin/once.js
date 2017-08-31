@@ -15,6 +15,12 @@ export interface Stylesheet {
     [className: string]: Style;
 }
 
+export interface Keyframes {
+    [className: string]: {
+        [property: string]: string;
+    }
+}
+
 function toKebabCase(s: string) {
     return s.replace(/[A-Z]/g, v => `-${v.toLowerCase()}`);
 }
@@ -33,37 +39,43 @@ function stringify(prefix: string, style: Style) {
     return `${prefix} {\n${own}}\n${after}\n`
 }
 
-export const style = (() => {
-    let counter = 0,
-        id = () => `c${(counter++).toFixed(0)}`,
-        requested = false,
-        queue = [] as string[],
-        update = () => {
-            try {
-                let node = el("style", { type: "text/css" }, ["\n" + queue.join("/***/\n")]);
-                append(document.head, node);
-                queue = [];
-            } finally {
-                requested = false;
-            }
-        },
-        request = (style: string) => {
-            queue.push(style);
-            if (!requested) {
-                requested = true;
-                requestAnimationFrame(update);
-            }
-        };
 
+let counter = 0,
+    id = () => `c${(counter++).toFixed(0)}`,
+    requested = false,
+    queue = [] as string[],
+    process = () => {
+        try {
+            let node = el("style", { type: "text/css" }, ["\n" + queue.join("/***/\n")]);
+            append(document.head, node);
+            queue = [];
+        } finally {
+            requested = false;
+        }
+    },
+    request = (style: string) => {
+        queue.push(style);
+        if (!requested) {
+            requested = true;
+            requestAnimationFrame(process);
+        }
+    };
 
-    function style(style: Style, name: string = "") {
-        let className = (name ? name + "-" : "") + id();
-        request(stringify("." + className, style));
-        return className;
+export function keyframes(keyframes: Keyframes) {
+    let name = id(),
+        r = "";
+    for (let i in keyframes) {
+        r += stringify(i, keyframes[i]).replace(/\n\s+/g, m => `${m}\t`);
     }
+    request(`@keyframes ${name} {\n${r}}\n`);
+    return name;
+}
 
-    return style;
-})();
+export function style(style: Style, name: string = "") {
+    let className = (name ? name + "-" : "") + id();
+    request(stringify("." + className, style));
+    return className;
+}
 
 export function stylesheet<T extends Stylesheet>(stylesheet: T): { [className in keyof T]: string } {
     let r: any = {};
