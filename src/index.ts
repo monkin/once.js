@@ -1,5 +1,4 @@
-
-export { el, El, Children, append, remove } from "./el";
+export { el, El, Children, append, remove, children } from "./el";
 export { list } from "./list";
 export { none } from "./none";
 export { when } from "./when";

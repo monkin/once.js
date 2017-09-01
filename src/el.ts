@@ -2,10 +2,10 @@
 import { classes, ClassValue } from "./classes";
 
 export type Attributes = { className?: ClassValue } & {
-    [key: string]: (string | (() => string | false) | ((e: Event) => void));
+    [key: string]: (string | boolean | (() => string | boolean | null) | ((e: Event) => void));
 };
 
-export type Children = (El | string | (() => string))[];
+export type Children = (El | string | (() => string | null | false))[];
 export type Parameter = string | Attributes | Children;
 
 export interface El {
@@ -34,7 +34,7 @@ class ElImplementation implements El {
     private updaters = [] as (() => void)[];
     private destructors = [] as (() => void)[];
     
-    constructor(tag: string, namespace: string | null, attributes: Attributes, children: Children) {
+    constructor(tag: string, namespace: string | null, attributes: Attributes, childList: Children) {
         let node = namespace ? document.createElementNS(namespace, tag) : document.createElement(tag);
 
         // attach events and attributes
@@ -53,16 +53,16 @@ class ElImplementation implements El {
                     realName = isClass ? "class" : name;
                 if (value instanceof Function) {
                     ((realName, value: Function) => {
-                        let text = value() as (string | false);
+                        let text = value() as (string | boolean);
                         if (text !== false) {
-                            node.setAttribute(realName, text);
+                            node.setAttribute(realName, text === true ? "" : text);
                         }
                         this.updaters.push(() => {
                             let newText = value();
                             if (newText !== text) {
                                 text = newText;
-                                if (text !== false) {
-                                    node.setAttribute(realName, text);
+                                if (text !== false && text !== null) {
+                                    node.setAttribute(realName, text === true ? "" : text);
                                 } else {
                                     node.removeAttribute(realName);
                                 }
@@ -70,32 +70,14 @@ class ElImplementation implements El {
                         });
                     })(realName, value);
                 } else {
-                    node.setAttribute(realName, value);
+                    if (value !== false) {
+                        node.setAttribute(realName, value === true ? "" : value);
+                    }
                 }
             }
         }
 
-        // append children
-        children.forEach(child => {
-            if (typeof child === "string") {
-                let text = document.createTextNode(child);
-                node.appendChild(text);
-            } else if (child instanceof Function) {
-                let value = child(),
-                    text = document.createTextNode(value);
-                this.updaters.push(() => {
-                    let newValue = child();
-                    if (newValue !== value) {
-                        text.nodeValue = value = newValue;
-                    }
-                });
-                node.appendChild(text);
-            } else {
-                append(node, child);
-                this.updaters.push(() => child.update());
-                this.destructors.push(() => child.dispose());
-            }
-        });
+        append(node, children(childList));
 
         this.node = node;
     }
@@ -145,6 +127,51 @@ export function el(...params: Parameter[]) {
 }
 export function svg(...params: Parameter[]) {
     return element("http://www.w3.org/2000/svg", params)
+}
+
+function noop() {}
+export function text(text: string | (() => string | null | false)): SimpleEl {
+    let isFunction = text instanceof Function,
+        content = text instanceof Function ? text() || "" : text,
+        node = document.createTextNode(content);
+    return {
+        node,
+        update: isFunction ? () => {
+                let newContent: string = (text as Function)() || "";
+                if (newContent !== content) {
+                    node.textContent = content = newContent;
+                }
+            } : noop,
+        dispose: noop
+    }
+}
+
+export function children(items: Children) {
+    let fragment = document.createDocumentFragment(),
+        elements: El[] = [];
+    for (let i of items) {
+        if (typeof i === "string" || i instanceof Function) {
+            let n = text(i);
+            fragment.appendChild(n.node);
+            elements.push(n);
+        } else {
+            append(fragment, i);
+            elements.push(i);
+        }
+    }
+    return {
+        node: fragment,
+        update() {
+            for (let e of elements) {
+                e.update();
+            }
+        },
+        dispose() {
+            for (let e of elements) {
+                e.dispose();
+            }
+        }
+    }
 }
 
 export function nodes(el: El) {
