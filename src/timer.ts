@@ -1,7 +1,7 @@
 
 import { El } from "./el";
 import { state } from "./state";
-import { disposable } from "./disposable"; 
+import { beforeDispose } from "./hooks"; 
 import { optional } from "./optional"
 
 const timeouts = new Map<number, (null | (() => void))[]>();
@@ -45,7 +45,7 @@ function timeout(callback: () => void, delay: number) {
 export function delay(create: () => El, delay: number) {
     return state(false, (isReady, setReady) => {
         let disposeTimeout = timeout(() => setReady(true), delay);
-        return disposable(optional(isReady, create), disposeTimeout);
+        return beforeDispose(optional(isReady, create), disposeTimeout);
     });
 }
 
@@ -112,6 +112,6 @@ export function throttle(element: El, period: number): El {
 export function timer(element: El, delay: number): El {
     return state(false, (get, set) => {
         let interval = setInterval(() => set(v => !v), delay);
-        return disposable(element, () => clearInterval(interval));
+        return beforeDispose(element, () => clearInterval(interval));
     });
 }

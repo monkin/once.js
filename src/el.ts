@@ -1,11 +1,57 @@
 
 import { classes, ClassValue } from "./classes";
+import Param from "./param";
 
+export type TextValue = Param<string | null | false | number | undefined>;
+export namespace TextValue {
+    export function toString(v: TextValue): string {
+        let vv = Param.value(v);
+        if (vv === null || vv === false || vv === undefined) {
+            return "";
+        } else {
+            if (typeof vv === "number") {
+                return vv.toString();
+            } else {
+                return vv;
+            }
+        }
+    }
+}
+
+export type AttributeSimpleTextValue = string | boolean | null | undefined | number;
+export type AttributeTextValue = Param<AttributeSimpleTextValue>;
+export type AttributeHandlerValue = (e: any) => void;
+export type AttributeValue = AttributeTextValue | AttributeHandlerValue;
 export type Attributes = { className?: ClassValue } & {
-    [key: string]: (string | boolean | (() => string | boolean | null) | ((e: Event) => void));
+    [key: string]: AttributeValue;
 };
+export namespace Attributes {
+    export function eachHandler(attributes: Attributes, callback: (eventName: string, handler: (e: Event) => void) => void) {
+        for (let i in attributes) {
+            if (i.startsWith("on")) {
+                let handler = attributes[i];
+                if (handler instanceof Function) {
+                    callback(i.substring(2), handler);
+                } else {
+                    throw new Error(`Event handler must be a function, '${handler}' passed`);
+                }
+            }
+        }
+    }
 
-export type Children = (El | string | (() => string | null | false))[];
+    export function eachText(attributes: Attributes, callback: (attrName: string, value: AttributeTextValue) => void) {
+        for (let i in attributes) {
+            let v = attributes[i];
+            if (i === "className") {
+                callback("class", v as AttributeTextValue);
+            } else if (!i.startsWith("on")) {
+                callback(i, v as AttributeTextValue);
+            }
+        }
+    }
+}
+
+export type Children = (El | TextValue)[];
 export type Parameter = string | Attributes | Children;
 
 export interface El {
@@ -25,71 +71,49 @@ export interface El {
 
 export interface SimpleEl {
     node: Node;
-    update(): void;
-    dispose(): void;
+    update(this: SimpleEl): void;
+    dispose(this: SimpleEl): void;
 }
 
 class ElImplementation implements El {
     readonly node: Element;
     private updaters = [] as (() => void)[];
     private destructors = [] as (() => void)[];
+
+    private setAttribute(name: string, value: AttributeSimpleTextValue) {
+        if (name === "contenteditable" && value === false) {
+            this.node.setAttribute(name, "false");
+        } else if (value === null || value === undefined || value === false) {
+            this.node.removeAttribute(name);
+        } else if (typeof value === "number") {
+            this.node.setAttribute(name, value.toString());
+        } else if (value === true) {
+            this.node.setAttribute(name, name === "contenteditable" ? "true" : name);
+        } else {
+            this.node.setAttribute(name, value);
+        }
+    }
     
-    constructor(tag: string, namespace: string | null, attributes: Attributes, childList: Children) {
+    constructor(tag: string, namespace: string | null, attributes: Attributes, content: Children) {
         let node = namespace ? document.createElementNS(namespace, tag) : document.createElement(tag);
 
-        // attach events and attributes
-        for (let name in attributes) {
-            if (name.startsWith("on")) {
-                let handler = attributes[name];
-                if (handler instanceof Function) {
-                    node.addEventListener(name.replace(/^on/, "").toLowerCase(), handler as (() => void));
-                } else {
-                    console.error(`Invalid event '${name}' handler: `, handler);
-                    throw new Error(`Event handler must be a function bun '${JSON.stringify(handler)}' passed`);
-                }
-            } else {
-                let isClass = name === "className",
-                    value = isClass ? classes(attributes.className) : attributes[name],
-                    realName = isClass ? "class" : name;
-                if (value instanceof Function) {
-                    ((realName, value: Function) => {
-                        let text = value() as (string | boolean);
-                        if (text !== false) {
-                            node.setAttribute(realName, text === true ? "" : text);
-                        }
-                        this.updaters.push(() => {
-                            let newText = value();
-                            if (newText !== text) {
-                                text = newText;
-                                if (text !== false && text !== null) {
-                                    node.setAttribute(realName, text === true ? "" : text);
-                                } else {
-                                    node.removeAttribute(realName);
-                                }
-                            }
-                        });
-                    })(realName, value);
-                } else {
-                    if (value !== false) {
-                        node.setAttribute(realName, value === true ? "" : value);
-                    }
-                }
+        Attributes.eachHandler(attributes, (name, handler) => node.addEventListener(name, handler));
+        Attributes.eachText(attributes, (name, value) => {
+            this.setAttribute(name, Param.value(value));
+            if (value instanceof Function) {
+                this.updaters.push(() => this.setAttribute(name, value()));
             }
-        }
+        });
 
-        append(node, children(childList));
+        append(node, children(content));
 
         this.node = node;
     }
     update() {
-        this.updaters.forEach(update => {
-            update();
-        });
+        this.updaters.forEach(update => update());
     }
     dispose() {
-        for (let i of this.destructors) {
-            i();
-        }
+        this.destructors.forEach(dispose => dispose());
     }
 }
 
@@ -146,31 +170,39 @@ export function text(text: string | (() => string | null | false)): SimpleEl {
     }
 }
 
-export function children(items: Children) {
-    let fragment = document.createDocumentFragment(),
-        elements: El[] = [];
-    for (let i of items) {
-        if (typeof i === "string" || i instanceof Function) {
-            let n = text(i);
-            fragment.appendChild(n.node);
-            elements.push(n);
-        } else {
-            append(fragment, i);
-            elements.push(i);
-        }
-    }
-    return {
-        node: fragment,
-        update() {
-            for (let e of elements) {
-                e.update();
-            }
-        },
-        dispose() {
-            for (let e of elements) {
-                e.dispose();
+export function children(items?: Children | null): El {
+    if (items && items.length) {
+        let fragment = document.createDocumentFragment(),
+            elements: El[] = [];
+        for (let i of items) {
+            if (typeof i === "string" || typeof i === "number" || i instanceof Function) {
+                let n = text(String(i));
+                fragment.appendChild(n.node);
+                elements.push(n);
+            } else if (i) {
+                append(fragment, i);
+                elements.push(i);
             }
         }
+        return {
+            node: elements.length > 1 ? [fragment.firstChild, fragment.lastChild] : elements[0].node,
+            update() {
+                for (let e of elements) {
+                    e.update();
+                }
+            },
+            dispose() {
+                for (let e of elements) {
+                    e.dispose();
+                }
+            }
+        } as El;
+    } else {
+        return {
+            node: document.createDocumentFragment(),
+            update: noop,
+            dispose: noop
+        };
     }
 }
 

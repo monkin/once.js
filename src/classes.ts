@@ -1,96 +1,51 @@
 
+import Param from "./param";
+
 export namespace Internal {
-    export type PrimitiveValue = string | null | undefined | false;
-    export interface ArrayValue extends Array<SimpleValue> { };
-    export interface FlagsValue { [i: number]: boolean }
-    export type SimpleValue =  PrimitiveValue | ArrayValue | FlagsValue;
+    export type SimplePrimitiveValue = string | null | undefined | false;
+    export interface SimpleArrayValue extends Array<SimplePrimitiveValue | SimpleArrayValue> {};
+    export type SimpleValue = SimplePrimitiveValue | SimpleArrayValue;
+    export type FlagsValue = { [key: string]: () => boolean };
+    export interface ArrayValue extends Array<Param<SimpleValue> | FlagsValue | ArrayValue> {};
 
-    export interface ClassValueArray extends Array<ClassValue> { };
+    export type ClassValue = Param<SimpleValue> | FlagsValue | ArrayValue;
 }
 
-function concat(v1?: string, v2?: string) {
-    return (v1 && v2) ? v1 + " " + v2 : (v1 || v2 || "");
-}
+export type ClassValue = Internal.ClassValue;
 
-function stringify(value: Internal.SimpleValue): string {
-    if (value) {
-        if (Array.isArray(value)) {
-            let result = "";
-            for (let v of value) {
-                result = concat(result, stringify(v));
-            }
-            return result;
-        } else if (typeof value === "string") {
-            return value;
-        } else {
-            let result = "";
-            for (let c in value) {
-                if (value[c]) {
-                    result = concat(result, c);
-                }
-            }
-            return result;
-        }
-    } else {
-        return "";
+export namespace ClassValue {
+    function concat(a?: string, b?: string): string {
+        return a && b ? a + " " + b : (a || b || "");
     }
-}
-
-export type ClassValue = Internal.SimpleValue
-        | (() => Internal.SimpleValue)
-        | { [key: string]: (boolean | (() => boolean)) }
-        | Internal.ClassValueArray;
-
-
-function join(v1: string | (() => string), v2: string | (() => string)) {
-    if (v1 && v2) {
-        if (v1 instanceof Function) {
-            if (v2 instanceof Function) {
-                return () => concat(v1(), v2());
+    export function stringify(value: ClassValue): Param<string> {
+        if (value) {
+            if (Array.isArray(value)) {
+                let r: Param<string> = "";
+                (value as ClassValue[]).forEach(v => {
+                    r = Param.join(r, stringify(v), concat);
+                });
+                return r;
+            } else if (typeof value === "string") {
+                return value;
+            } else if (value instanceof Function) {
+                return Param.map(value, stringify as () => string);
             } else {
-                return () => concat(v1(), v2);
+                return () => {
+                    let r = "";
+                    for (let i in value) {
+                        if (value[i]()) {
+                            r = concat(r, i);
+                        }
+                    }
+                    return r;
+                };
             }
         } else {
-            if (v2 instanceof Function) {
-                return () => concat(v1, v2());
-            } else {
-                return concat(v1, v2);
-            }
+            return "";
         }
-    } else {
-        return v1 || v2;
     }
 }
 
-function item(value: ClassValue): string | (() => string) {
-    if (value) {
-        if (value instanceof Function) {
-            return () => stringify(value());
-        } else if (Array.isArray(value)) {
-            let result: string | (() => string) = "";
-            for (let c of value) {
-                result = join(result, item(c));
-            }
-            return result;
-        } else if (typeof value === "string") {
-            return value;
-        } else {
-            let result: string | (() => string) = "";
-            for (let c in value) {
-                let v = (value as { [key: string]: (boolean | (() => boolean)) })[c];
-                if (v instanceof Function) {
-                    result = join(result, ((c: string, v: (() => boolean)) => {
-                        return () => v() ? c : "";
-                    })(c, v));
-                }
-            }
-            return result;
-        }
-    } else {
-        return "";
-    }
-}
-
-export function classes(...items: ClassValue[]): string | (() => string) {
-    return items.length === 1 ? item(items[0]) : item(items);
+export function classes(...classes: ClassValue[]) {
+    return ClassValue.stringify(classes);
 }

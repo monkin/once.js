@@ -1,3 +1,4 @@
+export { Param } from "./param";
 export { el, El, Children, append, remove, children } from "./el";
 export { list } from "./list";
 export { none } from "./none";
@@ -5,7 +6,6 @@ export { when } from "./when";
 export { optional } from "./optional";
 export { state } from "./state";
 export { debounce, throttle, timer } from "./timer";
-export { component } from "./component";
-export { disposable } from "./disposable";
+export { beforeUpdate, afterUpdate, beforeDispose, afterDispose } from "./hooks";
 export { classes, ClassValue } from "./classes";
 export { styled, style, stylesheet, Style, Stylesheet } from "./style";
