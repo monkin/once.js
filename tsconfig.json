@@ -5,6 +5,10 @@
         "noImplicitThis": true,
         "target": "es6",
         "outDir": "lib",
-        "declaration": true
-    }
+        "declaration": true,
+        "sourceMap": true
+    },
+    "include": [
+        "src/**/*"
+    ]
 }

@@ -9,3 +9,4 @@ export { debounce, throttle, timer } from "./timer";
 export { beforeUpdate, afterUpdate, beforeDispose, afterDispose } from "./hooks";
 export { classes, ClassValue } from "./classes";
 export { styled, style, stylesheet, Style, Stylesheet } from "./style";
+export { cache } from "./cache";

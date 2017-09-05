@@ -23,8 +23,8 @@ function timeout(callback: () => void, delay: number) {
                 for (let i of list) {
                     i && i();
                 }
+                timeouts.delete(time);
             }
-            timeouts.delete(time);
         }, Math.max(0, time - now));
     }
     return () => {

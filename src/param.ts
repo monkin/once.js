@@ -1,22 +1,16 @@
 
-export type Param<T> = T | (() => T);
+export type Param<T> = (() => T) | T;
 export namespace Param {
     export function value<T>(param: Param<T>): T {
         return param instanceof Function ? param() : param;
     }
-    export function map<T, R>(param: Param<T>, transform: (v: T) => R): Param<R> {
-        if (param instanceof Function) {
-            return () => transform(param());
-        } else {
-            return transform(param);
-        }
-    }
 
     let slice = Array.prototype.slice;
-    export function join<R, T1, T2>(p1: Param<T1>, p2: Param<T2>, transform: (p1: T1, p2: T2) => R): Param<R>;
-    export function join<R, T1, T2, T3>(p1: Param<T1>, p2: Param<T2>, p3: Param<T3>, transform: (p1: T1, p2: T2, p3: T3) => R): Param<R>;
-    export function join<R, T1, T2, T3, T4>(p1: Param<T1>, p2: Param<T2>, p3: Param<T3>, p4: Param<T4>, transform: (p1: T1, p2: T2, p3: T3, p4: T4) => R): Param<R>;
-    export function join() {
+    export function map<R, T1>(p1: Param<T1>, transform: (p1: T1) => R): Param<R>;
+    export function map<R, T1, T2>(p1: Param<T1>, p2: Param<T2>, transform: (p1: T1, p2: T2) => R): Param<R>;
+    export function map<R, T1, T2, T3>(p1: Param<T1>, p2: Param<T2>, p3: Param<T3>, transform: (p1: T1, p2: T2, p3: T3) => R): Param<R>;
+    export function map<R, T1, T2, T3, T4>(p1: Param<T1>, p2: Param<T2>, p3: Param<T3>, p4: Param<T4>, transform: (p1: T1, p2: T2, p3: T3, p4: T4) => R): Param<R>;
+    export function map() {
         let l = arguments.length,
             params: Param<any>[] = slice.call(arguments, 0, l - 1),
             fn: Function = arguments[l -1];
@@ -35,5 +29,3 @@ export namespace Param {
         }
     }
 }
-
-export default Param;

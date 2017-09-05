@@ -1,6 +1,6 @@
 
 import { classes, ClassValue } from "./classes";
-import Param from "./param";
+import { Param } from "./param";
 
 export type TextValue = Param<string | null | false | number | undefined>;
 export namespace TextValue {

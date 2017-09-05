@@ -1,5 +1,5 @@
 
-import Param from "./param";
+import { Param } from "./param";
 
 export namespace Internal {
     export type SimplePrimitiveValue = string | null | undefined | false;
@@ -22,7 +22,7 @@ export namespace ClassValue {
             if (Array.isArray(value)) {
                 let r: Param<string> = "";
                 (value as ClassValue[]).forEach(v => {
-                    r = Param.join(r, stringify(v), concat);
+                    r = Param.map(r, stringify(v), concat);
                 });
                 return r;
             } else if (typeof value === "string") {
@@ -46,6 +46,6 @@ export namespace ClassValue {
     }
 }
 
-export function classes(...classes: ClassValue[]) {
+export function classes(...classes: ClassValue[]): Param<string> {
     return ClassValue.stringify(classes);
 }
