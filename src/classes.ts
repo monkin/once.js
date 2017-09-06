@@ -28,7 +28,7 @@ export namespace ClassValue {
             } else if (typeof value === "string") {
                 return value;
             } else if (value instanceof Function) {
-                return Param.map(value, stringify as () => string);
+                return stringify(value());
             } else {
                 return () => {
                     let r = "";
