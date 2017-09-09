@@ -5,6 +5,13 @@ export namespace Param {
         return param instanceof Function ? param() : param;
     }
 
+    export function isValue<T>(v: Param<T>): v is T {
+        return !(v instanceof Function);
+    }
+    export function isFunction<T>(v: Param<T>): v is () => T {
+        return v instanceof Function;
+    }
+
     let slice = Array.prototype.slice;
     export function map<R, T1>(p1: Param<T1>, transform: (p1: T1) => R): Param<R>;
     export function map<R, T1, T2>(p1: Param<T1>, p2: Param<T2>, transform: (p1: T1, p2: T2) => R): Param<R>;
