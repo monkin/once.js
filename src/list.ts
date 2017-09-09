@@ -20,7 +20,7 @@ export function list<T>(data: Param<T[]>,
         fragment.appendChild(end);
         
         let result = {
-            node: fragment,
+            node: [begin, end],
             update: () => {
                 items = data instanceof Function ? data() : data;
                 
