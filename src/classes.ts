@@ -4,10 +4,14 @@ import { Param } from "./param";
 export namespace Internal {
     export type SimplePrimitiveValue = string | null | undefined | false;
     export interface SimpleArrayValue extends Array<SimplePrimitiveValue | SimpleArrayValue> {};
+    /**
+     * Value that stringifies to string
+     */
     export type SimpleValue = SimplePrimitiveValue | SimpleArrayValue;
+
+
     export type FlagsValue = { [key: string]: Param<boolean> };
     export interface ArrayValue extends Array<Param<SimpleValue> | FlagsValue | ArrayValue> {};
-
     export type ClassValue = Param<SimpleValue> | FlagsValue | ArrayValue;
 }
 

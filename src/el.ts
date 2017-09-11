@@ -84,7 +84,11 @@ class ElImplementation implements El {
         if (name === "contenteditable" && value === false) {
             this.node.setAttribute(name, "false");
         } else if (value === null || value === undefined || value === false) {
-            this.node.removeAttribute(name);
+            if (name === "contenteditable" && value === false) {
+                this.node.setAttribute(name, "false");
+            } else {
+                this.node.removeAttribute(name);
+            }
         } else if (typeof value === "number") {
             this.node.setAttribute(name, value.toString());
         } else if (value === true) {
