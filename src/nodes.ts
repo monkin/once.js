@@ -47,15 +47,23 @@ export namespace Nodes {
             }
         });
     }
-    export function insertBefore(parent: Node, ref: Node, nodes: Nodes) {
-        each(nodes, n => parent.insertBefore(n, ref));
+    export function insertBefore(ref: Node, nodes: Nodes) {
+        let parent = ref.parentNode;
+        each(nodes, n => parent && parent.insertBefore(n, ref));
     }
-    export function insertAfter(parent: Node, ref: Node, nodes: Nodes) {
-        let next = ref.nextSibling;
+    export function insertAfter(ref: Node, nodes: Nodes) {
+        let next = ref.nextSibling,
+            parent = ref.parentNode;
         if (next) {
-            each(nodes, n => parent.insertBefore(n, next));
+            each(nodes, n => parent && parent.insertBefore(n, next));
         } else {
-            append(parent, nodes);
+            parent && append(parent, nodes);
         }
+    }
+    export function last(nodes: Nodes) {
+        return Array.isArray(nodes) ? nodes[1] : nodes;
+    }
+    export function first(nodes: Nodes) {
+        return Array.isArray(nodes) ? nodes[0] : nodes;
     }
 }

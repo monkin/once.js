@@ -1,6 +1,7 @@
 
 import { classes, ClassValue } from "./classes";
 import { Param } from "./param";
+import { Nodes } from "./nodes";
 
 export type TextValue = Param<string | null | false | number | undefined>;
 export namespace TextValue {
@@ -58,7 +59,7 @@ export interface El {
     /**
      * Node or range of nodes
      */
-    readonly node: Node | [Node, Node];
+    readonly node: Nodes;
     /**
      * Element update function
      */
@@ -67,6 +68,25 @@ export interface El {
      * Release all the resources binded to the element
      */
     dispose(this: El): void;
+}
+
+export namespace El {
+    export function remove(el: El) {
+        el.dispose();
+        Nodes.remove(el.node);
+    }
+    export function append(parent: Node, el: El) {
+        Nodes.append(parent, el.node);
+    }
+    export function prepend(parent: Node, el: El) {
+        Nodes.prepend(parent, el.node);
+    }
+    export function insertBefore(node: Node, el: El) {
+        Nodes.insertBefore(node, el.node);
+    }
+    export function insertAfter(node: Node, el: El) {
+        Nodes.insertAfter(node, el.node);
+    }
 }
 
 export interface SimpleEl {
@@ -184,7 +204,7 @@ export function children(items?: Children | null): El {
                 fragment.appendChild(n.node);
                 elements.push(n);
             } else if (i) {
-                append(fragment, i);
+                El.append(fragment, i);
                 elements.push(i);
             }
         }
@@ -208,74 +228,4 @@ export function children(items?: Children | null): El {
             dispose: noop
         };
     }
-}
-
-export function nodes(el: El) {
-    if (Array.isArray(el.node)) {
-        let [a, b] = el.node,
-            i = a,
-            items = [] as Node[];
-        do {
-            items.push(i);
-            i = i.nextSibling as Node;
-        } while(i && i !== b);
-        return items;
-    } else {
-        return [el.node];
-    }
-}
-
-export function append(node: Node, el: El) {
-    if (node.lastChild !== lastNode(el)) {
-        for (let n of nodes(el)) {
-            node.appendChild(n);
-        }
-    }
-    return node;
-}
-export function preppend(node: Node, el: El) {
-    if (node.firstChild) {
-        insertBefore(node.firstChild, el);
-    } else {
-        append(node, el);
-    }
-    return node;
-}
-export function insertBefore(node: Node, el: El) {
-    if (node.previousSibling !== lastNode(el) && node !== firstNode(el)) {
-        let p = node.parentNode;
-        if (p) {
-            for (let n of nodes(el)) {
-                p.insertBefore(n, node);
-            }
-        }
-        return node;
-    }
-}
-export function insertAfter(node: Node, el: El) {
-    let next = node.nextSibling;
-    if (next !== firstNode(el) && node !== lastNode(el)) {
-        if (next) {
-            insertBefore(next, el);
-        } else {
-            node.parentNode && append(node.parentNode, el);
-        }
-    }
-    return node;
-}
-export function detach(el: El) {
-    for (let n of nodes(el)) {
-        n.parentNode && n.parentNode.removeChild(n);
-    }
-    return el;
-}
-export function remove(el: El) {
-    el.dispose();
-    detach(el);
-}
-export function firstNode(el: El) {
-    return Array.isArray(el.node) ? el.node[0] : el.node;
-}
-export function lastNode(el: El) {
-    return Array.isArray(el.node) ? el.node[1] : el.node;
 }
