@@ -1,5 +1,6 @@
 import { El, SimpleEl, el, Attributes, Children, Parameter } from "./el";
 import { ClassValue, classes } from "./classes";
+import { Param } from "./param";
 
 export interface Style {
     ":hover"?: Style;
@@ -8,16 +9,20 @@ export interface Style {
     ":before"?: Style;
     ":first-child"?: Style;
     ":last-child"?: Style;
-    [key: string]: string | Style | undefined;
+    [key: string]: string | 0 | Style | undefined;
 }
 
 export interface Stylesheet {
     [className: string]: Style;
 }
 
+export interface InlineStyle {
+    [key: string]: Param<string | 0 | undefined>;
+}
+
 export interface Keyframes {
     [className: string]: {
-        [property: string]: string;
+        [property: string]: string | 0;
     }
 }
 
@@ -30,7 +35,7 @@ function stringify(prefix: string, style: Style) {
         after = "";
     for (let i in style) {
         let v = style[i];
-        if (typeof v === "string") {
+        if (typeof v === "string" || typeof v === "number") {
             own += `\t${toKebabCase(i)}: ${v};\n`;
         } else if (v) {
             after += stringify(prefix + i, v);
@@ -107,5 +112,38 @@ export function styled(tag: string, predefinedStyle: Style, predefinedAttributes
         }
 
         return el(tag, attributes, children);
+    };
+}
+
+export function inline(style: InlineStyle) {
+    let prefix: string = "",
+        functions: (() => string | undefined)[] = [];
+    for (let i in style) {
+        let key = toKebabCase(i),
+            v = style[i];
+        if (Param.isFunction(v)) {
+            ((key, f) => {
+                functions.push(() => {
+                    let fv = f();
+                    if (fv || fv === 0) {
+                        return `${key}: ${fv};`;
+                    }
+                });
+            })(key, v);
+        } else {
+            if (v || v === 0) {
+                prefix += (prefix ? " " : "") + key + ": " + v + ";";
+            }
+        }
+    }
+    return () => {
+        let r = prefix;
+        for (let f of functions) {
+            let v = f();
+            if (v) {
+                r += (r ? " " : "") + v;
+            }
+        }
+        return r;
     };
 }
