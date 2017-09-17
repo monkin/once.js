@@ -1,21 +1,21 @@
 {
-    "name": "oneact",
-    "author": {
-        "name": "Andrey Monkin",
-        "email": "monkin.andrey@gmail.com"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/monkin/oneact.git"
-    },
-    "license": "MIT",
-    "version": "1.0.1",
-    "main": "./lib/index.js",
-    "types": "./lib/index.d.ts",
-    "devDependencies": {
-        "typescript": "^2.5.1"
-    },
-    "scripts": {
-        "prepublish": "tsc"
-    }
+  "name": "oneact",
+  "author": {
+    "name": "Andrey Monkin",
+    "email": "monkin.andrey@gmail.com"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/monkin/oneact.git"
+  },
+  "license": "MIT",
+  "version": "1.0.2",
+  "main": "./lib/index.js",
+  "types": "./lib/index.d.ts",
+  "devDependencies": {
+    "typescript": "^2.5.1"
+  },
+  "scripts": {
+    "prepublish": "tsc"
+  }
 }
