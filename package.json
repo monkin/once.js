@@ -4,6 +4,10 @@
         "name": "Andrey Monkin",
         "email": "monkin.andrey@gmail.com"
     },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/monkin/oneact.git"
+    },
     "license": "MIT",
     "version": "1.0.1",
     "main": "./lib/index.js",
