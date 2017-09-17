@@ -9,10 +9,13 @@
     "url": "https://github.com/monkin/oneact.git"
   },
   "license": "MIT",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
-  "files": ["lib", "LICENSE"],
+  "files": [
+    "lib",
+    "LICENSE"
+  ],
   "devDependencies": {
     "typescript": "^2.5.1"
   },
