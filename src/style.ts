@@ -136,14 +136,18 @@ export function inline(style: InlineStyle) {
             }
         }
     }
-    return () => {
-        let r = prefix;
-        for (let f of functions) {
-            let v = f();
-            if (v) {
-                r += (r ? " " : "") + v;
+    if (functions.length) {
+        return () => {
+            let r = prefix;
+            for (let f of functions) {
+                let v = f();
+                if (v) {
+                    r += (r ? " " : "") + v;
+                }
             }
-        }
-        return r;
-    };
+            return r;
+        };
+    } else {
+        return prefix;
+    }
 }
