@@ -1,4 +1,4 @@
-import { El, append, remove, insertAfter } from "./el";
+import { El } from "./el";
 import { Param } from "./param";
 
 /**
@@ -14,7 +14,7 @@ export function when(flag: Param<boolean>, whenTrue: () => El, whenFalse: () => 
             child = flagValue ? whenTrue() : whenFalse();
         
         fragment.appendChild(begin);
-        append(fragment, child);
+        El.append(fragment, child);
         fragment.appendChild(end);
 
         return {
@@ -22,16 +22,16 @@ export function when(flag: Param<boolean>, whenTrue: () => El, whenFalse: () => 
             update() {
                 let f = Param.value(flag);
                 if (f === flagValue) {
-                    child.update();
+                    El.update(child);
                 } else {
                     flagValue = f;
-                    remove(child);
+                    El.remove(child);
                     child = flagValue ? whenTrue() : whenFalse();
-                    insertAfter(begin, child);
+                    El.insertAfter(begin, child);
                 }
             },
             dispose() {
-                child.dispose();
+                El.dispose(child);
             }
         };
     } else {

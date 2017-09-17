@@ -1,29 +1,31 @@
 
-import { classes, ClassValue } from "./classes";
 import { Param } from "./param";
 import { Nodes } from "./nodes";
+import { Actions } from "./actions";
 
-export type TextValue = Param<string | null | false | number | undefined>;
+export namespace Internal {
+    export type SimpleValue = string | null | boolean | number | undefined;
+}
+
+export type TextValue = Param<Internal.SimpleValue>;
 export namespace TextValue {
-    export function toString(v: TextValue): string {
-        let vv = Param.value(v);
-        if (vv === null || vv === false || vv === undefined) {
+    export function toString(text: TextValue): string {
+        let v = Param.value(text);
+        if (v === null || v === undefined) {
             return "";
         } else {
-            if (typeof vv === "number") {
-                return vv.toString();
+            if (typeof v === "number" || typeof v === "boolean") {
+                return String(v);
             } else {
-                return vv;
+                return v;
             }
         }
     }
 }
 
-export type AttributeSimpleTextValue = string | boolean | null | undefined | number;
-export type AttributeTextValue = Param<AttributeSimpleTextValue>;
-export type AttributeHandlerValue = (e: any) => void;
-export type AttributeValue = AttributeTextValue | AttributeHandlerValue;
-export type Attributes = { className?: ClassValue } & {
+export type AttributeValue = TextValue | ((e: any) => void);
+export type Attributes = {
+    className?: TextValue;
     [key: string]: AttributeValue;
 };
 export namespace Attributes {
@@ -32,7 +34,7 @@ export namespace Attributes {
             if (i.startsWith("on")) {
                 let handler = attributes[i];
                 if (handler instanceof Function) {
-                    callback(i.substring(2), handler);
+                    callback(i.substring(2).toLowerCase(), handler);
                 } else {
                     throw new Error(`Event handler must be a function, '${handler}' passed`);
                 }
@@ -40,13 +42,13 @@ export namespace Attributes {
         }
     }
 
-    export function eachText(attributes: Attributes, callback: (attrName: string, value: AttributeTextValue) => void) {
+    export function eachText(attributes: Attributes, callback: (attrName: string, value: TextValue) => void) {
         for (let i in attributes) {
             let v = attributes[i];
             if (i === "className") {
-                callback("class", v as AttributeTextValue);
+                callback("class", v as TextValue);
             } else if (!i.startsWith("on")) {
-                callback(i, v as AttributeTextValue);
+                callback(i, v as TextValue);
             }
         }
     }
@@ -63,16 +65,16 @@ export interface El {
     /**
      * Element update function
      */
-    update(this: El): void;
+    readonly update?: Actions;
     /**
      * Release all the resources binded to the element
      */
-    dispose(this: El): void;
+    readonly dispose?: Actions;
 }
 
 export namespace El {
     export function remove(el: El) {
-        el.dispose();
+        Actions.call(el.dispose);
         Nodes.remove(el.node);
     }
     export function append(parent: Node, el: El) {
@@ -87,20 +89,24 @@ export namespace El {
     export function insertAfter(node: Node, el: El) {
         Nodes.insertAfter(node, el.node);
     }
+    export function update(el: El) {
+        Actions.call(el.update);
+    }
+    export function dispose(el: El) {
+        Actions.call(el.dispose);
+    }
 }
 
 export interface SimpleEl {
     node: Node;
-    update(this: SimpleEl): void;
-    dispose(this: SimpleEl): void;
+    update?: Actions;
+    dispose?: Actions;
 }
 
 class ElImplementation implements El {
     readonly node: Element;
-    private updaters = [] as (() => void)[];
-    private destructors = [] as (() => void)[];
 
-    private setAttribute(name: string, value: AttributeSimpleTextValue) {
+    private setAttribute(name: string, value: Internal.SimpleValue) {
         if (name === "contenteditable" && value === false) {
             this.node.setAttribute(name, "false");
         } else if (value === null || value === undefined || value === false) {
@@ -117,28 +123,35 @@ class ElImplementation implements El {
             this.node.setAttribute(name, value);
         }
     }
+
+    private attachAttribute = (name: string, value: TextValue) => {
+        let isValue = name === value,
+            old: Internal.SimpleValue = undefined;
+        this.update = Actions.merge(this.update, Param.update(value, v => {
+            if (v !== (isValue ? (this.node as HTMLInputElement).value : old)) {
+                old = v;
+                this.setAttribute(name, v);
+            }
+        }));
+    }
+    private attachHandler = (name: string, handler: (e: Event) => void) => {
+        this.node.addEventListener(name, handler);
+    }
     
     constructor(tag: string, namespace: string | null, attributes: Attributes, content: Children) {
         let node = namespace ? document.createElementNS(namespace, tag) : document.createElement(tag);
 
-        Attributes.eachHandler(attributes, (name, handler) => node.addEventListener(name, handler));
-        Attributes.eachText(attributes, (name, value) => {
-            this.setAttribute(name, Param.value(value));
-            if (value instanceof Function) {
-                this.updaters.push(() => this.setAttribute(name, value()));
-            }
-        });
+        Attributes.eachHandler(attributes, this.attachHandler);
+        Attributes.eachText(attributes, this.attachAttribute);
 
-        append(node, children(content));
-
+        let c = children(content);
+        El.append(node, c);
+        this.update = Actions.merge(this.update, c.update);
+        this.dispose = c.dispose;
         this.node = node;
     }
-    update() {
-        this.updaters.forEach(update => update());
-    }
-    dispose() {
-        this.destructors.forEach(dispose => dispose());
-    }
+    update: Actions = null;
+    dispose: Actions = null;
 }
 
 function element(namespace: string | null, params: Parameter[]): SimpleEl {
@@ -177,55 +190,43 @@ export function svg(...params: Parameter[]) {
     return element("http://www.w3.org/2000/svg", params)
 }
 
-function noop() {}
-export function text(text: string | (() => string | null | false)): SimpleEl {
-    let isFunction = text instanceof Function,
-        content = text instanceof Function ? text() || "" : text,
-        node = document.createTextNode(content);
+export function text(text: TextValue): SimpleEl {
+    let node = document.createTextNode(""),
+        old: Internal.SimpleValue = "";
     return {
         node,
-        update: isFunction ? () => {
-                let newContent: string = (text as Function)() || "";
-                if (newContent !== content) {
-                    node.textContent = content = newContent;
-                }
-            } : noop,
-        dispose: noop
-    }
+        update: Param.update(text, (v) => {
+            if (v !== old) {
+                old = v;
+                node.textContent = TextValue.toString(v);
+            }
+        })
+    };
 }
 
 export function children(items?: Children | null): El {
     if (items && items.length) {
         let fragment = document.createDocumentFragment(),
-            elements: El[] = [];
+            update: Actions = null,
+            dispose: Actions = null;
         for (let i of items) {
-            if (typeof i === "string" || typeof i === "number" || i instanceof Function) {
-                let n = text(String(i));
-                fragment.appendChild(n.node);
-                elements.push(n);
+            if (typeof i === "string" || typeof i === "number" || typeof i === "boolean" || i instanceof Function) {
+                let t = text(i);
+                fragment.appendChild(t.node);
+                update = Actions.merge(update, t.update);
             } else if (i) {
                 El.append(fragment, i);
-                elements.push(i);
+                update = Actions.merge(update, i.update);
+                dispose = Actions.merge(dispose, i.dispose);
             }
         }
+
+        let { firstChild, lastChild } = fragment;
         return {
-            node: elements.length > 1 ? [fragment.firstChild, fragment.lastChild] : elements[0].node,
-            update() {
-                for (let e of elements) {
-                    e.update();
-                }
-            },
-            dispose() {
-                for (let e of elements) {
-                    e.dispose();
-                }
-            }
+            node: firstChild === lastChild ? firstChild : [firstChild, lastChild],
+            update, dispose
         } as El;
     } else {
-        return {
-            node: document.createDocumentFragment(),
-            update: noop,
-            dispose: noop
-        };
+        return { node: document.createComment("empty") };
     }
 }

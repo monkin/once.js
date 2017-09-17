@@ -1,5 +1,5 @@
-
-import { El, SimpleEl, el, append, Attributes, Children, Parameter } from "./el";
+import { El, SimpleEl, el, Attributes, Children, Parameter } from "./el";
+import { ClassValue, classes } from "./classes";
 
 export interface Style {
     ":hover"?: Style;
@@ -47,7 +47,7 @@ let counter = 0,
     process = () => {
         try {
             let node = el("style", { type: "text/css" }, ["\n" + queue.join("/***/\n")]);
-            append(document.head, node);
+            El.append(document.head, node);
             queue = [];
         } finally {
             requested = false;
@@ -101,7 +101,7 @@ export function styled(tag: string, predefinedStyle: Style, predefinedAttributes
         }
 
         if (attributes.hasOwnProperty("className")) {
-            attributes.className = [className, attributes.className];
+            attributes.className = classes(className, attributes.className as ClassValue);
         } else {
             attributes.className = className;
         }

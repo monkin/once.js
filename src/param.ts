@@ -12,6 +12,15 @@ export namespace Param {
         return v instanceof Function;
     }
 
+    export function update<T>(param: Param<T>, update: (v: T) => void): (() => void) | undefined {
+        if (param instanceof Function) {
+            update(param());
+            return () => update(param());
+        } else {
+            update(param);
+        }
+    }
+
     let slice = Array.prototype.slice;
     export function map<R, T1>(p1: Param<T1>, transform: (p1: T1) => R): Param<R>;
     export function map<R, T1, T2>(p1: Param<T1>, p2: Param<T2>, transform: (p1: T1, p2: T2) => R): Param<R>;

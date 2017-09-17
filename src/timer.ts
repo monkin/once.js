@@ -55,7 +55,7 @@ export function delay(create: () => El, delay: number) {
 export function debounce(element: El, period: number): El {
     let node = Array.isArray(element.node) ? element.node[0] : element.node,
         timeoutDestructor: () => void,
-        update = () => element.update();
+        update = () => El.update(element);
     return {
         node: element.node,
         update() {
@@ -64,7 +64,7 @@ export function debounce(element: El, period: number): El {
         },
         dispose() {
             timeoutDestructor && timeoutDestructor();
-            element.dispose();
+            El.dispose(element);
         }
     };
 }
@@ -80,7 +80,7 @@ export function throttle(element: El, period: number): El {
         update = () => {
             if (document.contains(node)) {
                 timeoutFlag = false;
-                element.update();
+                El.update(element);
                 lastUpdate = Date.now();
             }
         };
@@ -95,13 +95,13 @@ export function throttle(element: El, period: number): El {
                     timeoutDestructor = timeout(update, period - diff);
                 } else {
                     lastUpdate = now;
-                    element.update();
+                    El.update(element);
                 }
             }
         },
         dispose() {
             timeoutDestructor && timeoutDestructor();
-            element.dispose();
+            El.dispose(element);
         }
     };
 }

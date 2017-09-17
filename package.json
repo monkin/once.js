@@ -8,10 +8,10 @@
     "version": "1.0.1",
     "main": "./lib/index.js",
     "types": "./lib/index.d.ts",
-    "dependencies": {
+    "devDependencies": {
         "typescript": "^2.5.1"
     },
     "scripts": {
-        "install": "tsc"
+        "prepublish": "tsc"
     }
 }

@@ -35,29 +35,37 @@ export namespace Nodes {
         each(nodes, n => p && p.removeChild(n));
     }
     export function append(parent: Node, nodes: Nodes) {
-        each(nodes, n => parent.appendChild(n));
+        if (parent.lastChild !== last(nodes)) {
+            each(nodes, n => parent.appendChild(n));
+        }
     }
     export function prepend(parent: Node, nodes: Nodes) {
-        each(nodes, n => {
+        if (parent.firstChild !== first(nodes)) {
             let c = parent.firstChild;
-            if (c) {
-                parent.insertBefore(n, c);
-            } else {
-                parent.appendChild(n);
-            }
-        });
+            each(nodes, n => {
+                if (c) {
+                    parent.insertBefore(n, c);
+                } else {
+                    parent.appendChild(n);
+                }
+            });
+        }
     }
     export function insertBefore(ref: Node, nodes: Nodes) {
-        let parent = ref.parentNode;
-        each(nodes, n => parent && parent.insertBefore(n, ref));
+        if (ref.previousSibling !== last(nodes)) {
+            let parent = ref.parentNode;
+            each(nodes, n => parent && parent.insertBefore(n, ref));
+        }
     }
     export function insertAfter(ref: Node, nodes: Nodes) {
-        let next = ref.nextSibling,
-            parent = ref.parentNode;
-        if (next) {
-            each(nodes, n => parent && parent.insertBefore(n, next));
-        } else {
-            parent && append(parent, nodes);
+        if (ref.nextSibling !== first(nodes)) {
+            let next = ref.nextSibling,
+                parent = ref.parentNode;
+            if (next) {
+                each(nodes, n => parent && parent.insertBefore(n, next));
+            } else {
+                parent && append(parent, nodes);
+            }
         }
     }
     export function last(nodes: Nodes) {

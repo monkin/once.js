@@ -1,5 +1,6 @@
 export { Param } from "./param";
-export { el, El, Children, append, remove, children } from "./el";
+export { Actions } from "./actions";
+export { el, El, Children, children } from "./el";
 export { list } from "./list";
 export { none } from "./none";
 export { when } from "./when";

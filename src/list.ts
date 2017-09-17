@@ -1,4 +1,6 @@
-import { El, insertAfter, lastNode, remove, children } from "./el";
+import { Actions } from "./actions"
+import { Nodes } from "./nodes"
+import { El, children } from "./el";
 import { Param } from "./param";
 
 /**
@@ -22,7 +24,7 @@ export function list<T>(data: Param<T[]>,
         let result = {
             node: [begin, end],
             update: () => {
-                items = data instanceof Function ? data() : data;
+                items = data();
                 
                 let keys = new Set<any>(),
                     reorderNeeded = false; // If true children must be reordered
@@ -44,7 +46,7 @@ export function list<T>(data: Param<T[]>,
                             reorderNeeded = reorderNeeded || e.i !== i;
                             e.i = i;
                             e.v = v;
-                            e.el.update();
+                            El.update(e.el);
                         }
                     } else {
                         // We need to create new one element
@@ -66,7 +68,7 @@ export function list<T>(data: Param<T[]>,
                     }
                 }
                 for (let x of toRemove) {
-                    remove((elements.get(x) as any).el);
+                    El.remove((elements.get(x) as { el: El, i: number, v: T }).el);
                     elements.delete(x);
                 }
 
@@ -75,20 +77,20 @@ export function list<T>(data: Param<T[]>,
                     let n = begin;
                     for (let k of keys) {
                         let item = (elements.get(k) as { el: El, i: number, v: T }).el;
-                        insertAfter(n, item);
-                        n = lastNode(item);
+                        El.insertAfter(n, item);
+                        n = Nodes.last(item.node);
                     }
                 }
             },
             dispose() {
                 for (let e of elements.values()) {
-                    e.el.dispose();
+                    Actions.call(e.el.dispose);
                 }
             }
         } as El;
 
         // Initialize items
-        result.update();
+        Actions.call(result.update);
 
         return result;
     } else {

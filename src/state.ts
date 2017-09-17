@@ -1,5 +1,4 @@
-
-import { El, insertAfter } from "./el";
+import { El } from "./el";
 
 let counter = 0,
     refreshRequested = false,
@@ -15,7 +14,7 @@ function refresh(el?: El) {
             try {
                 refreshProcessing = true;
                 counter = (counter + 1) & 0xFFFF;
-                componentsToRefresh.forEach(c => c.update());
+                componentsToRefresh.forEach(El.update);
                 componentsToRefresh.clear();
             } finally {
                 refreshRequested = false;
@@ -66,14 +65,14 @@ export function state<T>(initial: T, render: (get: () => T, set: (v: T | ((s: T)
                             current = next;
                             next = undefined;
                         }
-                        child.update();
+                        El.update(child);
                     }
                 } else {
-                    child.update();
+                    El.update(child);
                 }
             },
             dispose() {
-                child.dispose();
+                El.update(child);
             }
         };
     return result;
