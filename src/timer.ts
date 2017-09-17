@@ -9,7 +9,7 @@ const timeouts = new Map<number, (null | (() => void))[]>();
 /**
  * Fast and low accuracy timeout
  */
-function timeout(callback: () => void, delay: number) {
+export function timeout(callback: () => void, delay: number) {
     let now = Date.now(),
         time = Math.round((now + delay) / 30),
         entry = timeouts.get(time);

@@ -6,7 +6,7 @@ export { none } from "./none";
 export { when } from "./when";
 export { optional } from "./optional";
 export { state } from "./state";
-export { debounce, throttle, timer, delay } from "./timer";
+export { debounce, throttle, timer, delay, timeout } from "./timer";
 export { beforeUpdate, afterUpdate, beforeDispose, afterDispose } from "./hooks";
 export { classes, ClassValue } from "./classes";
 export { styled, style, stylesheet, keyframes, inline, Style, Stylesheet } from "./style";
