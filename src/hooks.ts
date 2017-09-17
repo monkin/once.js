@@ -2,14 +2,14 @@
 import { El } from "./el";
 import { Actions } from "./actions";
 
-export function beforeUpdate(el: El, update: () => void): El {
+export function beforeUpdate(el: El, update: Actions): El {
     return {
         node: el.node,
         update: Actions.merge(update, el.update),
         dispose: el.dispose
     };
 }
-export function afterUpdate(el: El, update: () => void): El {
+export function afterUpdate(el: El, update: Actions): El {
     return {
         node: el.node,
         update: Actions.merge(Actions.merge(null, el.update), update),
@@ -17,14 +17,14 @@ export function afterUpdate(el: El, update: () => void): El {
     };
 }
 
-export function beforeDispose(el: El, dispose: () => void): El {
+export function beforeDispose(el: El, dispose: Actions): El {
     return {
         node: el.node,
         update: el.update,
         dispose: Actions.merge(dispose, el.dispose)
     }
 }
-export function afterDispose(el: El, dispose: () => void): El {
+export function afterDispose(el: El, dispose: Actions): El {
     return {
         node: el.node,
         update: el.update,
