@@ -31,8 +31,13 @@ export namespace Nodes {
         }
     }
     export function remove(nodes: Nodes) {
-        let p = parent(nodes);
-        each(nodes, n => p && p.removeChild(n));
+        if (Array.isArray(nodes)) {
+            let fragment = document.createDocumentFragment();
+            each(nodes, n => fragment.appendChild(n));
+        } else {
+            let p = nodes.parentNode;
+            p && p.removeChild(nodes);
+        }
     }
     export function append(parent: Node, nodes: Nodes) {
         if (parent.lastChild !== last(nodes)) {
