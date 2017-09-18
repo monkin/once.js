@@ -204,7 +204,9 @@ export function text(text: TextValue): SimpleEl {
     };
 }
 
-export function children(items?: Children | null): El {
+function identity<T>(v: T) { return v; }
+
+export function children(items: Children | null | undefined, callback: ((children: El) => El) = identity): El {
     if (items && items.length) {
         let fragment = document.createDocumentFragment(),
             update: Actions = null,
@@ -221,12 +223,14 @@ export function children(items?: Children | null): El {
             }
         }
 
-        let { firstChild, lastChild } = fragment;
+        let { firstChild, lastChild } = fragment,
+            r = callback({ node: firstChild === lastChild ? firstChild : [firstChild, lastChild] } as El);
         return {
-            node: firstChild === lastChild ? firstChild : [firstChild, lastChild],
-            update, dispose
-        } as El;
+            node: r.node,
+            update: Actions.merge(Actions.clone(r.update), update),
+            dispose: Actions.merge(Actions.clone(r.dispose), dispose)
+        };
     } else {
-        return { node: document.createComment("empty") };
+        return callback({ node: document.createComment("children") });
     }
 }

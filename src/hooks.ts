@@ -12,7 +12,7 @@ export function beforeUpdate(el: El, update: Actions): El {
 export function afterUpdate(el: El, update: Actions): El {
     return {
         node: el.node,
-        update: Actions.merge(Actions.merge(null, el.update), update),
+        update: Actions.merge(Actions.clone(el.update), update),
         dispose: el.dispose
     };
 }
@@ -28,6 +28,6 @@ export function afterDispose(el: El, dispose: Actions): El {
     return {
         node: el.node,
         update: el.update,
-        dispose: Actions.merge(Actions.merge(null, el.dispose), dispose)
+        dispose: Actions.merge(Actions.clone(el.dispose), dispose)
     }
 }

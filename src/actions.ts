@@ -33,4 +33,11 @@ export namespace Actions {
             }
         }
     }
+    export function clone(a: Actions): Actions {
+        if (Array.isArray(a)) {
+            return a.slice();
+        } else {
+            return a;
+        }
+    }
 }
