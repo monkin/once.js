@@ -142,7 +142,7 @@ export function inline(style: InlineStyle) {
             for (let f of functions) {
                 let v = f();
                 if (v) {
-                    r += (r ? " " : "") + v;
+                    r += (r ? " " + v : v);
                 }
             }
             return r;
