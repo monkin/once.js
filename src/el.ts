@@ -54,7 +54,36 @@ export namespace Attributes {
     }
 }
 
-export type Children = (El | TextValue)[];
+export type Children = Children.List | El | (() => Internal.SimpleValue) | null | undefined;
+export namespace Children {
+    export type Simple = El | TextValue;
+    export interface List extends Array<Simple | List> {}
+
+    export function* each(children: Children | Children.Simple): IterableIterator<Children.Simple> {
+        if (children !== null && children !== undefined) {
+            if (Array.isArray(children)) {
+                for (let c of children) {
+                    for (let r of each(c)) {
+                        yield r;
+                    }
+                }
+            } else {
+                yield children;
+            }
+        }
+    }
+    export function toEl(c: Children.Simple): El {
+        if (c === null || c === undefined) {
+            return { node: document.createComment("empty") };
+        } else if (typeof c === "string" || typeof c === "number" || typeof c === "boolean" || c instanceof Function) {
+            return text(c);
+        } else {
+            return c;
+        }
+    }
+}
+
+
 export type Parameter = string | Attributes | Children;
 
 export interface El {
@@ -94,6 +123,19 @@ export namespace El {
     }
     export function dispose(el: El) {
         Actions.call(el.dispose);
+    }
+    export function isEl(v: any): v is El {
+        if (v && v.node) {
+            if (v.node instanceof Node) {
+                return true;
+            } else if (Array.isArray(v.node) && v.node.length === 2) {
+                return (v.node[0] instanceof Node) && (v.node[1] instanceof Node);
+            } else {
+                return false;
+            }
+        } else {
+            return false;
+        }
     }
 }
 
@@ -157,17 +199,23 @@ class ElImplementation implements El {
 function element(namespace: string | null, params: Parameter[]): SimpleEl {
     let tag = "div",
         attributes = {} as Attributes,
-        children = [] as Children;
+        children = [] as Children.List;
     for (let p of params) {
-        if (typeof p === "string") {
-            tag = p;
-        } else if (Array.isArray(p)) {
-            for (let c of p) {
-                children.push(c);
-            }
-        } else {
-            for (let i in p) {
-                attributes[i] = p[i];
+        if (p !== null && p !== undefined) {
+            if (typeof p === "string") {
+                tag = p;
+            } else if (Array.isArray(p)) {
+                for (let c of p) {
+                    children.push(c);
+                }
+            } else if (El.isEl(p)) {
+                children.push(p);
+            } else if (typeof p === "object") {
+                for (let i in p) {
+                    attributes[i] = p[i];
+                }
+            } else {
+                children.push(text(p));
             }
         }
     }
@@ -206,21 +254,23 @@ export function text(text: TextValue): SimpleEl {
 
 function identity<T>(v: T) { return v; }
 
-export function children(items: Children | null | undefined, callback: ((children: El) => El) = identity): El {
-    if (items && items.length) {
+export function children(items: Children, callback: ((children: El) => El) = identity): El {
+    if (El.isEl(items)) {
+        let r = callback({ node: items.node });
+        return {
+            node: r.node,
+            update: Actions.merge(Actions.clone(r.update), items.update),
+            dispose: Actions.merge(Actions.clone(r.dispose), items.dispose)
+        };
+    } else if (items) {
         let fragment = document.createDocumentFragment(),
             update: Actions = null,
             dispose: Actions = null;
-        for (let i of items) {
-            if (typeof i === "string" || typeof i === "number" || typeof i === "boolean" || i instanceof Function) {
-                let t = text(i);
-                fragment.appendChild(t.node);
-                update = Actions.merge(update, t.update);
-            } else if (i) {
-                El.append(fragment, i);
-                update = Actions.merge(update, i.update);
-                dispose = Actions.merge(dispose, i.dispose);
-            }
+        for (let i of Children.each(items)) {
+            let n = Children.toEl(i);
+            El.append(fragment, n);
+            update = Actions.merge(update, n.update);
+            dispose = Actions.merge(dispose, n.dispose); 
         }
 
         let { firstChild, lastChild } = fragment,
@@ -231,6 +281,6 @@ export function children(items: Children | null | undefined, callback: ((childre
             dispose: Actions.merge(Actions.clone(r.dispose), dispose)
         };
     } else {
-        return callback({ node: document.createComment("children") });
+        return callback({ node: document.createComment("empty") });
     }
 }

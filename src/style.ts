@@ -1,4 +1,4 @@
-import { El, SimpleEl, el, Attributes, Children, Parameter } from "./el";
+import { El, SimpleEl, el, text, Attributes, Children, Parameter } from "./el";
 import { ClassValue, classes } from "./classes";
 import { Param } from "./param";
 
@@ -94,13 +94,23 @@ export function styled(tag: string, predefinedStyle: Style, predefinedAttributes
     let className = style(predefinedStyle);
     return (...params: (Attributes | Children)[]) => {
         let attributes: Attributes = predefinedAttributes ? {...predefinedAttributes} : {},
-            children = [] as Children;
+            children = [] as Children.List;
         for (let p of params) {
-            if (Array.isArray(p)) {
-                children = children.concat(p);
-            } else {
-                for (let a in p) {
-                    attributes[a] = p[a];
+            if (p !== null && p !== undefined) {
+                if (typeof p === "object") {
+                    if (El.isEl(p)) {
+                        children.push(p);
+                    } else if (Array.isArray(p)) {
+                        for (let c of Children.each(p)) {
+                            children.push(p);
+                        }
+                    } else {
+                        for (let a in p) {
+                            attributes[a] = p[a];
+                        }
+                    }
+                } else {
+                    children.push(text(p));
                 }
             }
         }

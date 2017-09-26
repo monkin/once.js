@@ -9,18 +9,18 @@ export namespace Nodes {
         fragment.appendChild(end);
         return [begin, end];
     }
-    export function each(nodes: Nodes, callback: (node: Node) => void) {
+    export function* each(nodes: Nodes): IterableIterator<Node> {
         if (Array.isArray(nodes)) {
             let [begin, end] = nodes,
                 i: Node | null = begin,
                 s = end.nextSibling;
             while (i && i !== s) {
                 let v: Node | null = i.nextSibling;
-                callback(i);
+                yield i;
                 i = v;
             }
         } else {
-            callback(nodes);
+            yield nodes;
         }
     }
     export function parent(nodes: Nodes) {
@@ -33,7 +33,9 @@ export namespace Nodes {
     export function remove(nodes: Nodes) {
         if (Array.isArray(nodes)) {
             let fragment = document.createDocumentFragment();
-            each(nodes, n => fragment.appendChild(n));
+            for (let n of each(nodes)) {
+                fragment.appendChild(n);
+            }
         } else {
             let p = nodes.parentNode;
             p && p.removeChild(nodes);
@@ -41,35 +43,45 @@ export namespace Nodes {
     }
     export function append(parent: Node, nodes: Nodes) {
         if (parent.lastChild !== last(nodes)) {
-            each(nodes, n => parent.appendChild(n));
+            for (let n of each(nodes)) {
+                parent.appendChild(n);
+            }
         }
     }
     export function prepend(parent: Node, nodes: Nodes) {
         if (parent.firstChild !== first(nodes)) {
             let c = parent.firstChild;
-            each(nodes, n => {
+            for (let n of each(nodes)) {
                 if (c) {
                     parent.insertBefore(n, c);
                 } else {
                     parent.appendChild(n);
                 }
-            });
+            }
         }
     }
     export function insertBefore(ref: Node, nodes: Nodes) {
         if (ref.previousSibling !== last(nodes)) {
             let parent = ref.parentNode;
-            each(nodes, n => parent && parent.insertBefore(n, ref));
+            if (parent) {
+                for (let n of each(nodes)) {
+                    parent.insertBefore(n, ref);
+                }
+            }
         }
     }
     export function insertAfter(ref: Node, nodes: Nodes) {
         if (ref.nextSibling !== first(nodes)) {
             let next = ref.nextSibling,
                 parent = ref.parentNode;
-            if (next) {
-                each(nodes, n => parent && parent.insertBefore(n, next));
-            } else {
-                parent && append(parent, nodes);
+            if (parent) {
+                if (next) {
+                    for (let n of each(nodes)) {
+                        parent.insertBefore(n, next);
+                    }
+                } else {
+                    append(parent, nodes);
+                }
             }
         }
     }
