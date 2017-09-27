@@ -76,7 +76,7 @@ export function keyframes(keyframes: Keyframes) {
     return name;
 }
 
-export function style(style: Style, name: string = "") {
+export function style(name: string, style: Style) {
     let className = (name ? name + "-" : "") + id();
     request(stringify("." + className, style));
     return className;
@@ -85,13 +85,13 @@ export function style(style: Style, name: string = "") {
 export function stylesheet<T extends Stylesheet>(stylesheet: T): { [className in keyof T]: string } {
     let r: any = {};
     for (let c in stylesheet) {
-        r[c] = style(stylesheet[c], c);
+        r[c] = style(c, stylesheet[c]);
     }
     return r;
 }
 
 export function styled(tag: string, predefinedStyle: Style, predefinedAttributes?: Attributes) {
-    let className = style(predefinedStyle);
+    let className = style(tag, predefinedStyle);
     return (...params: (Attributes | Children)[]) => {
         let attributes: Attributes = predefinedAttributes ? {...predefinedAttributes} : {},
             children = [] as Children.List;
