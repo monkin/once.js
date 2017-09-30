@@ -9,7 +9,7 @@
     "url": "https://github.com/monkin/oneact.git"
   },
   "license": "MIT",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "main": "./index.js",
   "types": "./index.d.ts",
   "files": [
