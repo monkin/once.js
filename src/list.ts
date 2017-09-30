@@ -1,13 +1,13 @@
 import { Actions } from "./actions"
 import { Nodes } from "./nodes"
-import { El, children } from "./el";
+import { El, Children, children } from "./el";
 import { Param } from "./param";
 
 /**
  * List of elements 
  */
 export function list<T>(data: Param<T[]>,
-        map: (item: Param<T>, index: Param<number>, list: Param<T[]>) => El,
+        map: (item: Param<T>, index: Param<number>, list: Param<T[]>) => Children,
         optionalKey?: (v: T, i: number) => any) {
     if (Param.isFunction(data)) {
         let key = optionalKey || ((v: T, i: number) => i),
@@ -53,7 +53,7 @@ export function list<T>(data: Param<T[]>,
                         let d = { el: null as any, i, v };
                         (d => {
                             elements.set(k, d);
-                            elements.set(k, Object.assign(d, { el: map(() => d.v, () => d.i, () => items) }));
+                            elements.set(k, Object.assign(d, { el: children(map(() => d.v, () => d.i, () => items)) }));
                         })(d);
 
                         reorderNeeded = true;                    

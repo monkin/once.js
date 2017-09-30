@@ -1,14 +1,6 @@
 export type Nodes = Node | [Node, Node];
 
 export namespace Nodes {
-    export function range(name: string) {
-        let fragment = document.createDocumentFragment(),
-            begin = document.createComment(name),
-            end = document.createComment("/" + name);
-        fragment.appendChild(begin);
-        fragment.appendChild(end);
-        return [begin, end];
-    }
     export function* each(nodes: Nodes): IterableIterator<Node> {
         if (Array.isArray(nodes)) {
             let [begin, end] = nodes,

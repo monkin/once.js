@@ -1,4 +1,4 @@
-import { El } from "./el";
+import { El, Children, children } from "./el";
 
 let counter = 0,
     refreshRequested = false,
@@ -28,7 +28,7 @@ function refresh(el?: El) {
  * @param initial Initial state value
  * @param render Callback with parameters that helps to get and set state
  */
-export function state<T>(initial: T, render: (get: () => T, set: (v: T | ((s: T) => T)) => void) => El): El {
+export function state<T>(initial: T, render: (get: () => T, set: (v: T | ((s: T) => T)) => void) => Children): El {
     let lastUpdate = counter - 1,
         current = initial,
         next: T | undefined = undefined,
@@ -54,7 +54,7 @@ export function state<T>(initial: T, render: (get: () => T, set: (v: T | ((s: T)
                 refresh(result);
             }
         },
-        child = render(get, set),
+        child = children(render(get, set)),
         result = {
             node: child.node,
             update() {

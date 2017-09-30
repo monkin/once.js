@@ -1,5 +1,5 @@
 
-import { El } from "./el";
+import { El, Children, children } from "./el";
 import { state } from "./state";
 import { beforeDispose } from "./hooks"; 
 import { optional } from "./optional"
@@ -42,7 +42,7 @@ export function timeout(callback: () => void, delay: number) {
  * @param create Element creation function
  * @param delay Element creation delay
  */
-export function delay(create: () => El, delay: number) {
+export function delay(create: () => Children, delay: number) {
     return state(false, (isReady, setReady) => {
         let disposeTimeout = timeout(() => setReady(true), delay);
         return beforeDispose(optional(isReady, create), disposeTimeout);
