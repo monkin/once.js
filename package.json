@@ -9,12 +9,9 @@
     "url": "https://github.com/monkin/oneact.git"
   },
   "license": "MIT",
-  "version": "1.0.16",
-  "main": "./index.js",
-  "types": "./index.d.ts",
+  "version": "1.0.17",
   "files": [
-    "lib",
-    "src",
+    "lib/*",
     "LICENSE",
     "index.js",
     "index.d.ts"
@@ -23,6 +20,8 @@
     "typescript": "^2.5.1"
   },
   "scripts": {
-    "prepublish": "tsc"
+    "prepublish": "tsc",
+    "install": "cp -fr lib/* .",
+    "postinstall": "rm -fr lib"
   }
 }

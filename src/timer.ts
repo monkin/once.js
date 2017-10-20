@@ -6,12 +6,14 @@ import { optional } from "./optional"
 
 const timeouts = new Map<number, (null | (() => void))[]>();
 
+const TIMER_SCALE = 30;
+
 /**
  * Fast and low accuracy timeout
  */
 export function timeout(callback: () => void, delay: number) {
     let now = Date.now(),
-        time = Math.round((now + delay) / 30),
+        time = Math.round((now + delay) / TIMER_SCALE),
         entry = timeouts.get(time);
     if (entry) {
         entry.push(callback);
@@ -25,7 +27,7 @@ export function timeout(callback: () => void, delay: number) {
                 }
                 timeouts.delete(time);
             }
-        }, Math.max(0, time - now));
+        }, Math.max(0, time * TIMER_SCALE - now));
     }
     return () => {
         let list = timeouts.get(time);

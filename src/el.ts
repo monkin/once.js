@@ -137,63 +137,61 @@ export namespace El {
             return false;
         }
     }
+
+    // HtmlEl implementation
+
+    function setAttribute(node: Element, name: string, value: Internal.SimpleValue) {
+        if (name === "contenteditable" && value === false) {
+            node.setAttribute(name, "false");
+        } else if (value === null || value === undefined || value === false) {
+            if (name === "contenteditable" && value === false) {
+                node.setAttribute(name, "false");
+            } else {
+                node.removeAttribute(name);
+            }
+        } else if (typeof value === "number") {
+            node.setAttribute(name, value.toString());
+        } else if (value === true) {
+            node.setAttribute(name, name === "contenteditable" ? "true" : name);
+        } else {
+            node.setAttribute(name, value);
+        }
+    }
+
+    function attachAttribute(el: { node: Element, update?: Actions, dispose?: Actions }, name: string, value: TextValue) {
+        let isValue = name === value,
+            old: Internal.SimpleValue = undefined;
+        el.update = Actions.merge(el.update, Param.update(value, v => {
+            if (v !== (isValue ? (el.node as HTMLInputElement).value : old)) {
+                old = v;
+                setAttribute(el.node, name, v);
+            }
+        }));
+    }
+    function attachHandler(node: Node, name: string, handler: (e: Event) => void) {
+        node.addEventListener(name, handler);
+    }
+    
+    export function create(tag: string, namespace: string | null, attributes: Attributes, content: Children) {
+        let node = namespace ? document.createElementNS(namespace, tag) : document.createElement(tag),
+            el: { node: Element, update?: Actions, dispose?: Actions } = { node };
+
+        Attributes.eachHandler(attributes, (name, handler) => attachHandler(node, name, handler));
+        Attributes.eachText(attributes, (name, value) => attachAttribute(el, name, value));
+
+        let c = children(content);
+        El.append(node, c);
+        el.update = Actions.merge(el.update, c.update);
+        el.dispose = c.dispose;
+        el.node = node;
+        return el;
+    }
 }
 
 export interface SimpleEl {
     node: Node;
     update?: Actions;
     dispose?: Actions;
-}
-
-class ElImplementation implements El {
-    readonly node: Element;
-
-    private setAttribute(name: string, value: Internal.SimpleValue) {
-        if (name === "contenteditable" && value === false) {
-            this.node.setAttribute(name, "false");
-        } else if (value === null || value === undefined || value === false) {
-            if (name === "contenteditable" && value === false) {
-                this.node.setAttribute(name, "false");
-            } else {
-                this.node.removeAttribute(name);
-            }
-        } else if (typeof value === "number") {
-            this.node.setAttribute(name, value.toString());
-        } else if (value === true) {
-            this.node.setAttribute(name, name === "contenteditable" ? "true" : name);
-        } else {
-            this.node.setAttribute(name, value);
-        }
-    }
-
-    private attachAttribute = (name: string, value: TextValue) => {
-        let isValue = name === value,
-            old: Internal.SimpleValue = undefined;
-        this.update = Actions.merge(this.update, Param.update(value, v => {
-            if (v !== (isValue ? (this.node as HTMLInputElement).value : old)) {
-                old = v;
-                this.setAttribute(name, v);
-            }
-        }));
-    }
-    private attachHandler = (name: string, handler: (e: Event) => void) => {
-        this.node.addEventListener(name, handler);
-    }
-    
-    constructor(tag: string, namespace: string | null, attributes: Attributes, content: Children) {
-        let node = namespace ? document.createElementNS(namespace, tag) : document.createElement(tag);
-
-        Attributes.eachHandler(attributes, this.attachHandler);
-        Attributes.eachText(attributes, this.attachAttribute);
-
-        let c = children(content);
-        El.append(node, c);
-        this.update = Actions.merge(this.update, c.update);
-        this.dispose = c.dispose;
-        this.node = node;
-    }
-    update: Actions = null;
-    dispose: Actions = null;
 }
 
 function element(namespace: string | null, params: Parameter[]): SimpleEl {
@@ -219,7 +217,7 @@ function element(namespace: string | null, params: Parameter[]): SimpleEl {
             }
         }
     }
-    return new ElImplementation(tag, namespace, attributes, children);
+    return El.create(tag, namespace, attributes, children);
 }
 
 export function el(tag: string, attributes: Attributes, children: Children): SimpleEl;
