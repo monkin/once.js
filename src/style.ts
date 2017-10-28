@@ -2,7 +2,9 @@ import { El, SimpleEl, el, text, Attributes, Children, Parameter } from "./el";
 import { ClassValue, classes } from "./classes";
 import { Param } from "./param";
 
-export interface Style {
+import { CSSLength, CSSPercentage, CSSWideKeyword, CssProps } from "./css-props";
+
+export interface Style extends CssProps {
     ":hover"?: Style;
     ":active"?: Style;
     ":after"?: Style;
@@ -12,16 +14,12 @@ export interface Style {
     [key: string]: string | 0 | Style | undefined;
 }
 
-export interface Stylesheet {
-    [className: string]: Style;
-}
-
-export interface InlineStyle {
+export interface InlineStyle extends CssProps {
     [key: string]: Param<string | 0 | undefined>;
 }
 
 export interface Keyframes {
-    [className: string]: {
+    [position: string]: CssProps & {
         [property: string]: string | 0;
     }
 }
@@ -75,19 +73,16 @@ export function keyframes(keyframes: Keyframes) {
     request(`@keyframes ${name} {\n${r}}\n`);
     return name;
 }
-
-export function style(name: string, style: Style) {
+/**
+ * Compile and insert stylesheet
+ * To guarantee the rules order pass styles as array in separate objects
+ */
+export function style(name: string, ...styles: Style[]) {
     let className = (name ? name + "-" : "") + id();
-    request(stringify("." + className, style));
-    return className;
-}
-
-export function stylesheet<T extends Stylesheet>(stylesheet: T): { [className in keyof T]: string } {
-    let r: any = {};
-    for (let c in stylesheet) {
-        r[c] = style(c, stylesheet[c]);
+    for (const style of styles) {
+        request(stringify("." + className, style));
     }
-    return r;
+    return className;
 }
 
 export function styled(tag: string, predefinedStyle: Style, predefinedAttributes?: Attributes) {
